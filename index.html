@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVE Frontier • Jump & Fuel Calculator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background: #0a0e14 linear-gradient(to bottom, #0a0e14, #12171f);
+            color: #b0c4d8;
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+            background: rgba(15, 22, 35, 0.95);
+            border: 1px solid #442b1f;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(255, 140, 0, 0.15);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(to right, #0f1623, #2a1f18);
+            padding: 20px 30px;
+            border-bottom: 2px solid #ff8c00;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: #ffaa33;
+            margin: 0;
+            font-size: 28px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            color: #b88a5e;
+            font-size: 14px;
+            margin-top: 6px;
+        }
+
+        main {
+            padding: 30px;
+        }
+
+        /* Expandable Section Style */
+        .expandable-box {
+            background: #1a1208;
+            border: 1px solid #ff8c00;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .expandable-header {
+            padding: 14px 18px;
+            background: #2a1f18;
+            color: #ffaa33;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .expandable-header:hover {
+            background: #3a2a20;
+        }
+
+        .expandable-header::after {
+            content: "▼";
+            font-size: 14px;
+            transition: transform 0.3s ease;
+        }
+
+        .expandable-box.expanded .expandable-header::after {
+            transform: rotate(180deg);
+        }
+
+        .expandable-content {
+            padding: 0 18px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+
+        .expandable-box.expanded .expandable-content {
+            padding: 18px;
+            max-height: 520px;
+        }
+
+        label {
+            display: block;
+            margin-top: 18px;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #e0b080;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        select, input[type="number"] {
+            width: 100%;
+            padding: 10px 14px;
+            background: #0f1623;
+            border: 1px solid #4a3a2a;
+            color: #ffe0b0;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 15px;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        select:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #ff8c00;
+            box-shadow: 0 0 8px rgba(255, 140, 0, 0.5);
+        }
+
+        button {
+            width: 100%;
+            margin-top: 30px;
+            padding: 14px 20px;
+            background: linear-gradient(to right, #cc6600, #ff8c00);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: linear-gradient(to right, #ff8c00, #ffaa33);
+            box-shadow: 0 0 15px rgba(255, 140, 0, 0.7);
+            transform: translateY(-1px);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 22px;
+            background: #0c1422;
+            border: 1px solid #4a3a2a;
+            border-radius: 6px;
+            line-height: 1.65;
+            font-size: 15px;
+        }
+
+        .result strong {
+            color: #ffaa33;
+        }
+
+        .warning { color: #ff6b4a; font-weight: bold; }
+        .feasible { color: #4ade80; font-weight: bold; }
+
+        .diag {
+            margin-top: 15px;
+            padding: 12px;
+            background: #0a0f1a;
+            border: 1px dashed #4a3a2a;
+            font-size: 13.5px;
+            color: #c8a080;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #0f1623;
+        }
+
+        th, td {
+            border: 1px solid #4a3a2a;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: #2a1f18;
+            color: #ff8c00;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #8a6b4e;
+            font-size: 12px;
+            border-top: 1px solid #2a1f18;
+        }
+
+        .neon-text {
+            text-shadow: 0 0 8px #ff8c00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="neon-text">EVE FRONTIER</h1>
+            <div class="subtitle">Jump & Fuel Analysis System</div>
+        </header>
+
+        <main>
+            <!-- Expandable Mechanics Box -->
+            <div class="expandable-box" id="mechanicsBox">
+                <div class="expandable-header" onclick="toggleSection('mechanicsBox')">
+                    How Jumping Works in EVE Frontier <span style="font-size:13px; opacity:0.8;">(click to expand)</span>
+                </div>
+                <div class="expandable-content" id="mechanicsContent">
+                    <p><strong>Your single jump range</strong> depends on three main things: your ship, the heat in the system, and how heavy your ship is right now.</p>
+                    
+                    <ul style="padding-left:20px; margin:12px 0;">
+                        <li><strong>Ship Type</strong>: Every ship has a different “heat tolerance” and base mass. Some ships handle heat well and can jump farther in warmer systems.</li>
+                        <li><strong>System Heat (Temperature)</strong>: The hotter the system, the less distance you can jump in one go. At 90° or higher you cannot jump at all. Cool outskirts (below 10–20°) give the longest jumps.</li>
+                        <li><strong>Fuel & Ship Weight (Mass)</strong>: The heavier your ship (hull + cargo + fuel), the shorter each jump becomes.</li>
+                        <li><strong>Adaptive Skill</strong>: Adds 2% extra range per level by improving heat handling.</li>
+                    </ul>
+                    
+                    <p style="margin-top:12px;"><strong>Quick tip</strong>: For maximum range, stay in cool areas, keep your ship as light as possible, and level Adaptive skill.</p>
+                </div>
+            </div>
+
+            <label for="ship">Vessel Class:</label>
+            <select id="ship">
+                <option value="Carom">Carom (Hull: 7.2M kg, Heat: 8.5, Fuel Cap: 3,000)</option>
+                <option value="Stride">Stride (Hull: 7.9M kg, Heat: 8.0, Fuel Cap: 3,200)</option>
+                <option value="Reflex">Reflex (Hull: 9.75M kg, Heat: 3.0, Fuel Cap: 1,750)</option>
+                <option value="Recurve">Recurve (Hull: 10.2M kg, Heat: 1.0, Fuel Cap: 970)</option>
+                <option value="Reiver" selected>Reiver (Hull: 10.4M kg, Heat: 1.0, Fuel Cap: 1,416)</option>
+                <option value="Lai">Lai (Hull: 18.929M kg, Heat: 2.5, Fuel Cap: 2,400)</option>
+                <option value="USV">USV (Hull: 30.267M kg, Heat: 1.8, Fuel Cap: 2,420)</option>
+                <option value="Lorha">Lorha (Hull: 42.691M kg, Heat: 2.5, Fuel Cap: 2,508)</option>
+                <option value="MCF">MCF (Hull: 52.314M kg, Heat: 2.5, Fuel Cap: 6,548)</option>
+                <option value="Tades">Tades (Hull: 74.655M kg, Heat: 2.5, Fuel Cap: 5,972)</option>
+                <option value="HAF">HAF (Hull: 81.883M kg, Heat: 2.5, Fuel Cap: 4,184)</option>
+                <option value="Maul">Maul (Hull: 548.436M kg, Heat: 2.5, Fuel Cap: 24,160)</option>
+                <option value="Chumaq">Chumaq (Hull: 1,487.392M kg, Heat: 3.0, Fuel Cap: 270,585)</option>
+            </select>
+
+            <label for="adaptive">Adaptive Skill Level (0–10):</label>
+            <input type="number" id="adaptive" value="7" min="0" max="10">
+
+            <label for="temp">System Temperature (0–150):</label>
+            <input type="number" id="temp" value="5.8" min="0" max="150">
+
+            <label for="mass">Current Total Mass (millions of kg) — hull + cargo + fuel:</label>
+            <input type="number" id="mass" value="11.366" step="0.001">
+
+            <label for="fuelQty">Fuel Quantity (units in tank):</label>
+            <input type="number" id="fuelQty" value="1416" min="0" step="1">
+
+            <label for="fuelQualityType">Fuel Quality Type (defaults to D1):</label>
+            <select id="fuelQualityType" onchange="updateFuelQuality()">
+                <option value="0.10" selected>Basic (D1) – 0.10</option>
+                <option value="0.15">Basic (D2) – 0.15</option>
+                <option value="0.40">Advanced (SOF-40 / EU-40) – 0.40</option>
+                <option value="0.80">Advanced (SOF-80) – 0.80</option>
+                <option value="0.90">Advanced (EU-90) – 0.90</option>
+                <option value="custom">Custom Value</option>
+            </select>
+
+            <label for="fuelQuality">Fuel Quality (manual override):</label>
+            <input type="number" id="fuelQuality" value="0.10" min="0" step="0.01">
+
+            <label for="targetDist">Target Jump Distance (LY) for fuel estimate:</label>
+            <input type="number" id="targetDist" value="10" min="0" step="0.1">
+
+            <button onclick="calculateAll()">Engage Calculation Engine</button>
+
+            <div id="result" class="result"></div>
+        </main>
+
+        <!-- Expandable Ship Reference Table -->
+        <div class="expandable-box" id="tableBox" style="margin-top: 30px;">
+            <div class="expandable-header" onclick="toggleSection('tableBox')">
+                Vessel Reference Database <span style="font-size:13px; opacity:0.8;">(click to expand)</span>
+            </div>
+            <div class="expandable-content" id="tableContent">
+                <table>
+                    <tr><th>Vessel</th><th>Hull Mass (M kg)</th><th>Specific Heat</th><th>Fuel Capacity</th></tr>
+                    <tr><td>Carom</td><td>7.2</td><td>8.5</td><td>3,000</td></tr>
+                    <tr><td>Stride</td><td>7.9</td><td>8.0</td><td>3,200</td></tr>
+                    <tr><td>Reflex</td><td>9.75</td><td>3.0</td><td>1,750</td></tr>
+                    <tr><td>Recurve</td><td>10.2</td><td>1.0</td><td>970</td></tr>
+                    <tr><td>Reiver</td><td>10.4</td><td>1.0</td><td>1,416</td></tr>
+                    <tr><td>Lai</td><td>18.929</td><td>2.5</td><td>2,400</td></tr>
+                    <tr><td>USV</td><td>30.267</td><td>1.8</td><td>2,420</td></tr>
+                    <tr><td>Lorha</td><td>42.691</td><td>2.5</td><td>2,508</td></tr>
+                    <tr><td>MCF</td><td>52.314</td><td>2.5</td><td>6,548</td></tr>
+                    <tr><td>Tades</td><td>74.655</td><td>2.5</td><td>5,972</td></tr>
+                    <tr><td>HAF</td><td>81.883</td><td>2.5</td><td>4,184</td></tr>
+                    <tr><td>Maul</td><td>548.436</td><td>2.5</td><td>24,160</td></tr>
+                    <tr><td>Chumaq</td><td>1,487.392</td><td>3.0</td><td>270,585</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <footer style="margin-top: 20px; text-align: center; color: #8a6b4e; font-size: 12px;">
+            Single-jump calculation aligned with in-game Reiver data at 5.8° • Fuel distance unchanged
+        </footer>
+    </div>
+
+    <script>
+        const ships = {
+            "Carom": { hull: 7200000, heat: 8.5, fuelCap: 3000 },
+            "Stride": { hull: 7900000, heat: 8.0, fuelCap: 3200 },
+            "Reflex": { hull: 9750000, heat: 3.0, fuelCap: 1750 },
+            "Recurve": { hull: 10200000, heat: 1.0, fuelCap: 970 },
+            "Reiver": { hull: 10400000, heat: 1.0, fuelCap: 1416 },
+            "Lai": { hull: 18929160, heat: 2.5, fuelCap: 2400 },
+            "USV": { hull: 30266600, heat: 1.8, fuelCap: 2420 },
+            "Lorha": { hull: 42691330, heat: 2.5, fuelCap: 2508 },
+            "MCF": { hull: 52313760, heat: 2.5, fuelCap: 6548 },
+            "Tades": { hull: 74655480, heat: 2.5, fuelCap: 5972 },
+            "HAF": { hull: 81883000, heat: 2.5, fuelCap: 4184 },
+            "Maul": { hull: 548435920, heat: 2.5, fuelCap: 24160 },
+            "Chumaq": { hull: 1487392000, heat: 3.0, fuelCap: 270585 }
+        };
+
+        function updateFuelQuality() {
+            const type = document.getElementById("fuelQualityType").value;
+            if (type !== "custom") {
+                document.getElementById("fuelQuality").value = parseFloat(type);
+            }
+        }
+
+        function toggleSection(boxId) {
+            const box = document.getElementById(boxId);
+            box.classList.toggle("expanded");
+        }
+
+        function calculateAll() {
+            const shipName = document.getElementById("ship").value;
+            const adaptive = parseFloat(document.getElementById("adaptive").value) || 0;
+            const temp = parseFloat(document.getElementById("temp").value) || 0;
+            const massInput = parseFloat(document.getElementById("mass").value) || 0;
+            let mCurrent = massInput * 1000000;
+            const fuelQty = parseFloat(document.getElementById("fuelQty").value) || 0;
+            const fuelQual = parseFloat(document.getElementById("fuelQuality").value) || 0.10;
+            const targetDist = parseFloat(document.getElementById("targetDist").value) || 0;
+
+            const ship = ships[shipName];
+            if (!ship) {
+                document.getElementById("result").innerHTML = "<strong style='color:#ff6b4a;'>Error:</strong> Vessel data not found.";
+                return;
+            }
+
+            if (mCurrent < ship.hull) mCurrent = ship.hull;
+
+            const deltaT = Math.max(0, 150 - temp);
+            let jumpRangeHTML = '';
+            let diagnostics = '';
+
+            if (temp >= 90) {
+                jumpRangeHTML = `<span class="warning">No jump possible.</span> System temperature (${temp}) ≥ 90.`;
+            } else {
+                const cEff = ship.heat * (1 + adaptive * 0.02);
+                const range = (deltaT * cEff * ship.hull) / (1.5 * mCurrent);
+                jumpRangeHTML = `Maximum single-jump range: <strong>${range.toFixed(2)} LY</strong>`;
+
+                diagnostics = `
+                    <div class="diag">
+                        <strong>Diagnostics:</strong><br>
+                        ΔT = ${deltaT.toFixed(1)} (150 − ${temp})<br>
+                        C_eff = ${cEff.toFixed(3)} (heat ${ship.heat} × (1 + ${adaptive} × 0.02))<br>
+                        Hull = ${ship.hull.toLocaleString()} kg | Current mass = ${mCurrent.toLocaleString()} kg
+                    </div>`;
+            }
+
+            const totalDist = (fuelQty * fuelQual) / (0.0000001 * mCurrent);
+            const fuelNeeded = targetDist > 0 ? (targetDist * 0.0000001 * mCurrent) / fuelQual : 0;
+
+            let feasibility = '';
+            if (targetDist > 0) {
+                if (targetDist <= totalDist) {
+                    feasibility = `<span class="feasible">Feasible.</span> Fuel needed: ${fuelNeeded.toFixed(0)} units (you have ${fuelQty}).`;
+                } else {
+                    feasibility = `<span class="warning">Not enough fuel.</span> Requires ${fuelNeeded.toFixed(0)} units (you have ${fuelQty}).`;
+                }
+            }
+
+            const massDisplay = massInput.toFixed(3);
+
+            const resultHTML = `
+                <strong>Vessel:</strong> ${shipName} | Adaptive: ${adaptive} | Temp: ${temp}° | Mass: ${massDisplay}M kg<br><br>
+                ${jumpRangeHTML}<br>
+                ${diagnostics}<br><br>
+                <strong>Total range on current fuel:</strong> ${totalDist.toFixed(2)} LY<br>
+                (Fuel: ${fuelQty} units @ quality ${fuelQual})<br><br>
+                <strong>For target distance of ${targetDist} LY:</strong> ${feasibility}
+            `;
+
+            document.getElementById("result").innerHTML = resultHTML;
+        }
+
+        // Ship selection defaults (Reiver pre-selected with sensible starting values)
+        document.getElementById("ship").addEventListener("change", function() {
+            const shipName = this.value;
+            const ship = ships[shipName];
+            if (ship) {
+                const massMillions = (ship.hull / 1000000).toFixed(3);
+                document.getElementById("mass").value = massMillions;
+                document.getElementById("fuelQty").value = ship.fuelCap;
+                document.getElementById("fuelQualityType").value = "0.10";
+                updateFuelQuality();
+            }
+        });
+    </script>
+</body>
+</html>
